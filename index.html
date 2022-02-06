@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="color-scheme" content="dark" />
+	<meta name="robots" content="all" />
+	<meta name="theme-color" content="black" />
+	<meta name="description" content="A simple clock that shows the current time with seconds." />
+
+	<base href="./" />
+
+	<link rel="icon" href="./icon.svg" />
+	<link rel="manifest" href="./manifest.webmanifest" />
+	<link rel="apple-touch-icon" href="./icon.png" />
+
+	<link rel="preload" as="fetch" crossorigin href="./icon.svg" />
+
+	<title>Clock</title>
+
+	<style>
+		:root {
+			overflow: hidden;
+		}
+
+		body {
+			box-sizing: border-box;
+			margin: 0;
+			padding: .5rem;
+
+			display: grid;
+			place-items: center;
+
+			position: fixed;
+			inset: env(titlebar-area-height, 0) 0 0;
+			overflow-x: hidden;
+			overscroll-behavior-block: none;
+
+			font-family: system-ui;
+			color: white;
+			background-color: black;
+		}
+
+		time {
+			font-size: 5rem;
+			user-select: none;
+		}
+
+		titlebar {
+			box-sizing: border-box;
+			position: fixed;
+			display: flex;
+			gap: .4rem;
+			align-items: center;
+			padding-inline: .3rem;
+			overflow: hidden;
+
+			top: env(titlebar-area-y, 0);
+			left: env(titlebar-area-x, 0);
+			height: env(titlebar-area-height, 0);
+			width: env(titlebar-area-width, 100%);
+
+			app-region: drag;
+			-webkit-app-region: drag;
+
+			background-color: black;
+			color: white;
+		}
+
+		titlebar img#clockIcon {
+			inline-size: 1.3rem;
+			aspect-ratio: 1;
+		}
+
+	</style>
+
+	<script type="module">
+		const /** @type {string} */ colonChar = "∶"; // \u2236 = &ratio;
+
+		const clockSVGElementPromise = (async () => new DOMParser().parseFromString(
+			await (await window.fetch("./icon.svg")).text(), "image/svg+xml"
+		).firstElementChild)();
+
+		const displayTime = async () => {
+			const /** @type {Date} */ now = new Date();
+			const /** @type {number} */ hours = now.getHours();
+			const /** @type {number} */ minutes = now.getMinutes();
+			const /** @type {number} */ seconds = now.getSeconds();
+
+			for (const [/** @type {string} */ timeUnit, /** @type {number} */ timeValue] of [
+				{ hours }, { minutes }, { seconds },
+			].map($ => Object.entries($)[0])) {
+				document.querySelector("time " + timeUnit).textContent = timeValue.toString().padStart(2, "0");
+			}
+
+			const /** @type {string} */ time = [hours, minutes, seconds].map(
+				(/** @type {number} */ timeValue) => timeValue.toString().padStart(2, "0")
+			).join(colonChar);
+
+			document.querySelector("time").setAttribute("datetime", now.toISOString());
+
+			document.title = document.querySelector("titlebar-text").textContent = "Clock - " + time;
+
+			const /** @type {number} */ milliseconds = now.getMilliseconds();
+
+			window.setTimeout(displayTime, 1000 - milliseconds);
+
+			const clockSVGElement = await clockSVGElementPromise;
+
+			clockSVGElement.style.setProperty("--seconds", seconds);
+			clockSVGElement.style.setProperty("--minutes", minutes);
+			clockSVGElement.style.setProperty("--hours", hours);
+
+			const svg = clockSVGElement.outerHTML;
+
+			document.querySelector("link[rel=icon]").href = document.querySelector("img#clockIcon").src = (
+				"data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg)
+			);
+		}
+
+		displayTime();
+
+		document.body.addEventListener("dblclick", () => {
+			if (document.fullscreenElement) document.exitFullscreen();
+			else document.documentElement.requestFullscreen();
+		});
+
+		{ /// service worker, update & PWA
+			const registerServiceWorker = () => navigator.serviceWorker?.register("./service-worker.js", { scope: "./", updateViaCache: "all" });
+			registerServiceWorker();
+
+			navigator.serviceWorker?.addEventListener("message", async ({ data }) => {
+				if (data.message === "updateAvailable") registerServiceWorker();
+			});
+
+			const checkReadyState = async () => {
+				if (document.readyState === "complete" && navigator.onLine) (await navigator.serviceWorker?.ready)?.active.postMessage({ message: "checkForUpdate" });
+			};
+			checkReadyState();
+			document.addEventListener("readystatechange", checkReadyState);
+		}
+	</script>
+</head>
+
+<body>
+	<noscript>
+		Please enable JavaScript to view this site.
+		<hr />
+	</noscript>
+
+	<titlebar>
+		<img id="clockIcon" src="./icon.svg" alt="clock" />
+
+		<titlebar-text></titlebar-text>
+	</titlebar>
+
+	<time>
+		<hours></hours>&ratio;<minutes></minutes>&ratio;<seconds></seconds>
+	</time>
+</body>
+
+</html>

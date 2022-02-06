@@ -1,0 +1,53 @@
+<svg viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg">
+	<style>
+		:root {
+			color-scheme: dark light;
+
+			--circle-color: mediumSlateBlue;
+			--hours-color: dodgerBlue;
+			--minutes-color: springGreen;
+			--seconds-color: deepPink;
+
+			--hours: 10;
+			--minutes: 10;
+			--seconds: 30;
+		}
+
+		.backgroundCircle {
+			fill: none;
+			stroke: var(--circle-color);
+			stroke-width: 30;
+		}
+
+		.clockHand {
+			fill: none;
+			stroke-linecap: round;
+			transform-origin: center;
+		}
+
+		.clockHand.hours {
+			stroke-width: 50;
+			stroke: var(--hours-color);
+			transform: rotate(calc(var(--hours) * (1turn / 12)));
+		}
+
+		.clockHand.minutes {
+			stroke-width: 40;
+			stroke: var(--minutes-color);
+			transform: rotate(calc(var(--minutes) * (1turn / 60)));
+		}
+
+		.clockHand.seconds {
+			stroke-width: 30;
+			stroke: var(--seconds-color);
+			transform: rotate(calc(var(--seconds) * (1turn / 60)));
+		}
+
+	</style>
+
+	<circle cx="240" cy="240" r="225" class="backgroundCircle" />
+
+	<path d="M 240 240 v-110" class="clockHand hours" />
+	<path d="M 240 240 v-140" class="clockHand minutes" />
+	<path d="M 240 240 v-170" class="clockHand seconds" />
+</svg>
